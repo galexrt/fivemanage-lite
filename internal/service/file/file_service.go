@@ -10,7 +10,7 @@ import (
 	"github.com/fivemanage/lite/api"
 	"github.com/fivemanage/lite/internal/crypt"
 	"github.com/fivemanage/lite/internal/database"
-	"github.com/fivemanage/lite/internal/database/query/file"
+	filequery "github.com/fivemanage/lite/internal/database/query/file"
 	"github.com/fivemanage/lite/internal/http/httputil"
 	"github.com/fivemanage/lite/pkg/storage"
 	"github.com/sirupsen/logrus"
@@ -18,14 +18,16 @@ import (
 )
 
 type Service struct {
-	db      *bun.DB
-	storage storage.StorageLayer
+	db           *bun.DB
+	storage      storage.StorageLayer
+	uploadLimits UploadLimits
 }
 
-func NewService(db *bun.DB, storageLayer storage.StorageLayer) *Service {
+func NewService(db *bun.DB, storageLayer storage.StorageLayer, uploadLimits UploadLimits) *Service {
 	return &Service{
-		db:      db,
-		storage: storageLayer,
+		db:           db,
+		storage:      storageLayer,
+		uploadLimits: normalizeUploadLimits(uploadLimits),
 	}
 }
 
@@ -51,6 +53,10 @@ func (s *Service) CreateFile(
 		return UploadStorageError{
 			ErrorMsg: errors.New("failed to get mime type").Error(),
 		}
+	}
+
+	if err := validateUploadSize(fileType, fileHeader.Size, s.uploadLimits); err != nil {
+		return err
 	}
 
 	key, err = generateFileKey(organizationID, ext)
@@ -125,6 +131,9 @@ func (s *Service) CreateStorageFile(
 		return UploadStorageError{
 			ErrorMsg: errors.New("failed to get mime type").Error(),
 		}
+	}
+	if err := validateUploadSize(fileType, fileHeader.Size, s.uploadLimits); err != nil {
+		return err
 	}
 
 	// fileHeader.Filename has the extension most of the time
