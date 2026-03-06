@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 env:
-  dockerImage: 'ghcr.io/fivemanage/lite'
+  dockerImage: 'ghcr.io/galexrt/fivemanage-lite'
 
 jobs:
   release_nightly:
