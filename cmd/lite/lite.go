@@ -104,9 +104,16 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
+		uploadLimits := file.UploadLimits{
+			ImageBytes: viper.GetInt64("upload-max-image-bytes"),
+			AudioBytes: viper.GetInt64("upload-max-audio-bytes"),
+			VideoBytes: viper.GetInt64("upload-max-video-bytes"),
+			FileBytes:  viper.GetInt64("upload-max-file-bytes"),
+		}
+
 		authService := auth.NewService(store)
 		tokenService := token.NewService(store)
-		fileService := file.NewService(store, storageLayer)
+		fileService := file.NewService(store, storageLayer, uploadLimits)
 		organizationService := organization.NewService(store, clickhouseClient)
 		memberService := member.NewService(store)
 		datsetService := dataset.NewService(store, clickhouseClient)
@@ -185,6 +192,11 @@ func init() {
 	rootCmd.Flags().String("bucket-domain", "", "Bucket domain for file storage")
 	// otel
 	rootCmd.Flags().Bool("disable-otel", false, "Disable OpenTelemetry")
+	// upload limits in bytes
+	rootCmd.Flags().Int64("upload-max-image-bytes", 10*1024*1024, "Maximum image upload size in bytes")
+	rootCmd.Flags().Int64("upload-max-audio-bytes", 50*1024*1024, "Maximum audio upload size in bytes")
+	rootCmd.Flags().Int64("upload-max-video-bytes", 100*1024*1024, "Maximum video upload size in bytes")
+	rootCmd.Flags().Int64("upload-max-file-bytes", 100*1024*1024, "Maximum generic file upload size in bytes")
 
 	// fuck me
 	if err := viper.BindPFlag("port", rootCmd.Flags().Lookup("port")); err != nil {
@@ -221,6 +233,30 @@ func init() {
 		bindError(err)
 	}
 	if err := viper.BindEnv("disable-otel", "DISABLE_OTEL"); err != nil {
+		bindError(err)
+	}
+	if err := viper.BindPFlag("upload-max-image-bytes", rootCmd.Flags().Lookup("upload-max-image-bytes")); err != nil {
+		bindError(err)
+	}
+	if err := viper.BindPFlag("upload-max-audio-bytes", rootCmd.Flags().Lookup("upload-max-audio-bytes")); err != nil {
+		bindError(err)
+	}
+	if err := viper.BindPFlag("upload-max-video-bytes", rootCmd.Flags().Lookup("upload-max-video-bytes")); err != nil {
+		bindError(err)
+	}
+	if err := viper.BindPFlag("upload-max-file-bytes", rootCmd.Flags().Lookup("upload-max-file-bytes")); err != nil {
+		bindError(err)
+	}
+	if err := viper.BindEnv("upload-max-image-bytes", "UPLOAD_MAX_IMAGE_BYTES"); err != nil {
+		bindError(err)
+	}
+	if err := viper.BindEnv("upload-max-audio-bytes", "UPLOAD_MAX_AUDIO_BYTES"); err != nil {
+		bindError(err)
+	}
+	if err := viper.BindEnv("upload-max-video-bytes", "UPLOAD_MAX_VIDEO_BYTES"); err != nil {
+		bindError(err)
+	}
+	if err := viper.BindEnv("upload-max-file-bytes", "UPLOAD_MAX_FILE_BYTES"); err != nil {
 		bindError(err)
 	}
 

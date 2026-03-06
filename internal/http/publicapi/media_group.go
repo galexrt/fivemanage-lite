@@ -1,6 +1,7 @@
 package publicapi
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/fivemanage/lite/internal/auth"
@@ -95,13 +96,17 @@ func (h *mediaHandler) handleUpload(c echo.Context, fileType string) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, httputil.ErrorResponse("Unauthorized: "+err.Error()))
 	}
 
-	file, header, err := httputil.File(c.Request(), fileType)
+	f, header, err := httputil.File(c.Request(), fileType)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, httputil.ErrorResponse(err.Error()))
 	}
 
-	err = h.fileService.CreateFile(ctx, orgId, file, header)
+	err = h.fileService.CreateFile(ctx, orgId, f, header)
 	if err != nil {
+		if errors.Is(err, file.FileTooLargeError{}) {
+			return c.JSON(http.StatusRequestEntityTooLarge, httputil.ErrorResponse(err.Error()))
+		}
+
 		return c.JSON(http.StatusInternalServerError, httputil.ErrorResponse(err.Error()))
 	}
 

@@ -7,8 +7,7 @@ import (
 	"github.com/fivemanage/lite/pkg/cache"
 	"github.com/labstack/echo/v4"
 	echoSwagger "github.com/swaggo/echo-swagger"
-
-	_ "github.com/fivemanage/lite/docs"
+	//_ "github.com/fivemanage/lite/docs"
 )
 
 func Add(group *echo.Group,

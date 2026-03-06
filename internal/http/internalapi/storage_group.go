@@ -121,6 +121,9 @@ func (h *storageHandler) uploadStorageFile(c echo.Context) error {
 	)
 	if err != nil {
 		logrus.WithError(err).WithField("organizationId", organizationID).Error("failed to create file")
+		if errors.Is(err, file.FileTooLargeError{}) {
+			return echo.NewHTTPError(http.StatusRequestEntityTooLarge, httputil.ErrorResponse(err.Error()))
+		}
 
 		if errors.Is(err, file.UploadStorageError{}) {
 			return echo.NewHTTPError(http.StatusInternalServerError,
