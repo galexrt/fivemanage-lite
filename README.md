@@ -63,6 +63,7 @@ The application is configured via environment variables.
 | `CLICKHOUSE_PASSWORD` | ClickHouse password | `password` |
 | `CLICKHOUSE_DATABASE` | ClickHouse database name | `default` |
 | `ENV` | Environment mode (`production` or `dev`) | `dev` |
+| `DISABLE_OTEL` | Disable OpenTelemetry integration (true/false) | `false` |
 
 ---
 

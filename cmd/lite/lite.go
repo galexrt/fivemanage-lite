@@ -48,7 +48,7 @@ var rootCmd = &cobra.Command{
 
 		slog.Info("starting Fivemanage application", slog.String("version", Version))
 
-		otelShutdown, err := otel.SetupTracer()
+		otelShutdown, err := otel.SetupTracer(viper.GetBool("disable-otel"))
 		if err != nil {
 			slog.Error("failed to setup OpenTelemetry", slog.Any("error", err))
 		}
@@ -183,6 +183,8 @@ func init() {
 	// s3
 	rootCmd.Flags().String("s3-provider", "minio", "S3 provider")
 	rootCmd.Flags().String("bucket-domain", "", "Bucket domain for file storage")
+	// otel
+	rootCmd.Flags().Bool("disable-otel", false, "Disable OpenTelemetry")
 
 	// fuck me
 	if err := viper.BindPFlag("port", rootCmd.Flags().Lookup("port")); err != nil {
@@ -216,6 +218,9 @@ func init() {
 		bindError(err)
 	}
 	if err := viper.BindEnv("bucket-domain", "BUCKET_DOMAIN"); err != nil {
+		bindError(err)
+	}
+	if err := viper.BindEnv("disable-otel", "DISABLE_OTEL"); err != nil {
 		bindError(err)
 	}
 

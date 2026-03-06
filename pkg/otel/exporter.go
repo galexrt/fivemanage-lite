@@ -19,9 +19,9 @@ const (
 	otlpEndpoint = "localhost:4318"
 )
 
-func SetupTracer() (func(context.Context) error, error) {
+func SetupTracer(disabled bool) (func(context.Context) error, error) {
 	ctx := context.Background()
-	return InstallExportPipeline(ctx)
+	return InstallExportPipeline(ctx, disabled)
 }
 
 func Resource() *resource.Resource {
@@ -34,7 +34,14 @@ func Resource() *resource.Resource {
 	)
 }
 
-func InstallExportPipeline(ctx context.Context) (func(context.Context) error, error) {
+func InstallExportPipeline(ctx context.Context, disabled bool) (func(context.Context) error, error) {
+	if disabled {
+		tracerProvider := trace.NewTracerProvider()
+		otel.SetTracerProvider(tracerProvider)
+
+		return tracerProvider.Shutdown, nil
+	}
+
 	var tlsOption otlptracehttp.Option
 	if os.Getenv("ENV") == "dev" {
 		tlsOption = otlptracehttp.WithInsecure()
