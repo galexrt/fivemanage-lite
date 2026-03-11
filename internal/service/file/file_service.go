@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"mime/multipart"
+	"strings"
 
 	"github.com/fivemanage/lite/api"
 	"github.com/fivemanage/lite/internal/crypt"
@@ -262,6 +264,32 @@ func (s *Service) GetStorageFile(
 		Size:      file.Size,
 		CreatedAt: file.CreatedAt,
 	}, nil
+}
+
+func (s *Service) ProxyFile(
+	ctx context.Context,
+	organizationID string,
+	fileName string,
+) (io.ReadCloser, string, int64, error) {
+	if strings.TrimSpace(organizationID) == "" || strings.TrimSpace(fileName) == "" {
+		return nil, "", 0, GetFileError{
+			ErrorMsg: "organization id and file name are required",
+		}
+	}
+
+	if strings.Contains(fileName, "/") {
+		return nil, "", 0, GetFileError{
+			ErrorMsg: "file name must not contain path separators",
+		}
+	}
+
+	key := fmt.Sprintf("%s/%s", organizationID, fileName)
+	reader, contentType, contentLength, err := s.storage.GetFile(ctx, key)
+	if err != nil {
+		return nil, "", 0, err
+	}
+
+	return reader, contentType, contentLength, nil
 }
 
 func (s *Service) encode(file multipart.File, header *multipart.FileHeader) (*bytes.Reader, error) {

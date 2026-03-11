@@ -3,6 +3,9 @@ package publicapi
 import (
 	"errors"
 	"net/http"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/fivemanage/lite/internal/auth"
 	"github.com/fivemanage/lite/internal/http/httputil"
@@ -17,10 +20,16 @@ import (
 // DRY they said
 func registerMediaApi(group *echo.Group, fileService *file.Service, tokenService *token.Service, cache *cache.Cache) {
 	h := &mediaHandler{fileService: fileService}
+	group.GET("/file/:organizationId/:fileName", h.proxyFile)
 	group.POST("/image", h.uploadImage, middleware.TokenAuth(tokenService, cache), middleware.ValidateMime("image", middleware.WhitelistedImageMIME))
 	group.POST("/video", h.uploadVideo, middleware.TokenAuth(tokenService, cache), middleware.ValidateMime("video", middleware.WhitelistedVideoMIME))
 	group.POST("/audio", h.uploadAudio, middleware.TokenAuth(tokenService, cache), middleware.ValidateMime("audio", middleware.WhitelistedAudioMIME))
 	group.POST("/file", h.uploadFile, middleware.TokenAuth(tokenService, cache), middleware.ValidateMime("file", nil))
+}
+
+func ProxyFileHandler(fileService *file.Service) echo.HandlerFunc {
+	h := &mediaHandler{fileService: fileService}
+	return h.proxyFile
 }
 
 type mediaHandler struct {
@@ -112,11 +121,38 @@ func (h *mediaHandler) handleUpload(c echo.Context, fileType string) error {
 		return c.JSON(http.StatusInternalServerError, httputil.ErrorResponse(err.Error()))
 	}
 
-	publicUrl := viper.GetString("public-url")
+	publicUrl := strings.TrimRight(viper.GetString("public-url"), "/")
 
 	return c.JSON(http.StatusOK, httputil.Response(struct {
 		URL string `json:"url"`
 	}{
-		URL: publicUrl + "/" + key,
+		URL: publicUrl + "/file/" + key,
 	}))
+}
+
+func (h *mediaHandler) proxyFile(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	organizationID := c.Param("organizationId")
+	fileName := c.Param("fileName")
+
+	body, contentType, contentLength, err := h.fileService.ProxyFile(ctx, organizationID, fileName)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return c.JSON(http.StatusNotFound, httputil.ErrorResponse("File not found"))
+		}
+
+		if errors.Is(err, file.GetFileError{}) {
+			return c.JSON(http.StatusBadRequest, httputil.ErrorResponse(err.Error()))
+		}
+
+		return c.JSON(http.StatusInternalServerError, httputil.ErrorResponse(err.Error()))
+	}
+	defer body.Close()
+
+	if contentLength > 0 {
+		c.Response().Header().Set(echo.HeaderContentLength, strconv.FormatInt(contentLength, 10))
+	}
+
+	return c.Stream(http.StatusOK, contentType, body)
 }

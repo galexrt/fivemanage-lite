@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/smithy-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -76,6 +77,35 @@ func (r *Storage) UploadFile(ctx context.Context, file io.Reader, key, contentTy
 	}
 
 	return nil
+}
+
+func (r *Storage) GetFile(ctx context.Context, key string) (io.ReadCloser, string, int64, error) {
+	output, err := r.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(r.bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if apiErr.ErrorCode() == "NoSuchKey" || apiErr.ErrorCode() == "NotFound" {
+				return nil, "", 0, os.ErrNotExist
+			}
+		}
+
+		return nil, "", 0, err
+	}
+
+	contentType := ""
+	if output.ContentType != nil {
+		contentType = *output.ContentType
+	}
+
+	var contentLength int64
+	if output.ContentLength != nil {
+		contentLength = *output.ContentLength
+	}
+
+	return output.Body, contentType, contentLength, nil
 }
 
 func (r *Storage) DeleteFile() error {
