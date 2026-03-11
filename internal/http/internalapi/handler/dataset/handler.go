@@ -1,6 +1,8 @@
 package dataset
 
 import (
+	"net/http"
+
 	"github.com/fivemanage/lite/api"
 	"github.com/fivemanage/lite/internal/http/appctx"
 	"github.com/fivemanage/lite/internal/http/httputil"
@@ -38,7 +40,7 @@ func (r *handler) createDatasetHandler(c echo.Context) error {
 		return cc.JSON(500, httputil.ErrorResponse(err.Error()))
 	}
 
-	return cc.JSON(200, httputil.Response(dataset))
+	return cc.JSON(http.StatusOK, httputil.Response(dataset))
 }
 
 // listDatasetsHandler godoc
@@ -62,7 +64,7 @@ func (r *handler) listDatasetsHandler(c echo.Context) error {
 		return cc.JSON(500, httputil.ErrorResponse(err.Error()))
 	}
 
-	return cc.JSON(200, httputil.Response(datasets))
+	return cc.JSON(http.StatusOK, httputil.Response(datasets))
 }
 
 // listDatasetFieldsHandler godoc
@@ -88,7 +90,7 @@ func (r *handler) listDatasetFieldsHandler(c echo.Context) error {
 		return cc.JSON(500, httputil.ErrorResponse(err.Error()))
 	}
 
-	return cc.JSON(200, httputil.Response(fields))
+	return cc.JSON(http.StatusOK, httputil.Response(fields))
 }
 
 // queryDatasetLogsHandler godoc
@@ -130,7 +132,7 @@ func (r *handler) queryDatasetLogsHandler(c echo.Context) error {
 
 	response.Meta.TotalRowCount = len(logs)
 
-	return cc.JSON(200, httputil.Response(response))
+	return cc.JSON(http.StatusOK, httputil.Response(response))
 }
 
 // getDatasetLogHandler godoc
@@ -158,5 +160,5 @@ func (r *handler) getDatasetLogHandler(c echo.Context) error {
 		return cc.JSON(500, httputil.ErrorResponse(err.Error()))
 	}
 
-	return cc.JSON(200, httputil.Response(log))
+	return cc.JSON(http.StatusOK, httputil.Response(log))
 }

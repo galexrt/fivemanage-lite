@@ -1,6 +1,10 @@
 package publicapi
 
-import "github.com/labstack/echo/v4"
+import (
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+)
 
 func registerTraceApi(group *echo.Group) {
 	h := &traceHandler{}
@@ -17,7 +21,7 @@ type traceHandler struct{}
 // @Success      200  {object}  echo.Map
 // @Router       /traces [get]
 func (h *traceHandler) getTraces(c echo.Context) error {
-	return c.JSON(200, echo.Map{
+	return c.JSON(http.StatusOK, echo.Map{
 		"success": true,
 	})
 }

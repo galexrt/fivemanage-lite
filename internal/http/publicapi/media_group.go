@@ -11,6 +11,7 @@ import (
 	"github.com/fivemanage/lite/internal/service/token"
 	"github.com/fivemanage/lite/pkg/cache"
 	"github.com/labstack/echo/v4"
+	"github.com/spf13/viper"
 )
 
 // DRY they said
@@ -33,7 +34,7 @@ type mediaHandler struct {
 // @Accept       multipart/form-data
 // @Produce      json
 // @Param        image  formData  file  true  "Image file"
-// @Success      200    {object}  httputil.ResponseData{data=string}
+// @Success      200   {object}  httputil.ResponseData{data={url=string}}
 // @Failure      401    {object}  httputil.ErrorResponseData
 // @Failure      500    {object}  httputil.ErrorResponseData
 // @Router       /image [post]
@@ -48,7 +49,7 @@ func (h *mediaHandler) uploadImage(c echo.Context) error {
 // @Accept       multipart/form-data
 // @Produce      json
 // @Param        video  formData  file  true  "Video file"
-// @Success      200    {object}  httputil.ResponseData{data=string}
+// @Success      200   {object}  httputil.ResponseData{data={url=string}}
 // @Failure      401    {object}  httputil.ErrorResponseData
 // @Failure      500    {object}  httputil.ErrorResponseData
 // @Router       /video [post]
@@ -63,7 +64,7 @@ func (h *mediaHandler) uploadVideo(c echo.Context) error {
 // @Accept       multipart/form-data
 // @Produce      json
 // @Param        audio  formData  file  true  "Audio file"
-// @Success      200    {object}  httputil.ResponseData{data=string}
+// @Success      200   {object}  httputil.ResponseData{data={url=string}}
 // @Failure      401    {object}  httputil.ErrorResponseData
 // @Failure      500    {object}  httputil.ErrorResponseData
 // @Router       /audio [post]
@@ -78,7 +79,7 @@ func (h *mediaHandler) uploadAudio(c echo.Context) error {
 // @Accept       multipart/form-data
 // @Produce      json
 // @Param        file  formData  file  true  "File"
-// @Success      200   {object}  httputil.ResponseData{data=string}
+// @Success      200   {object}  httputil.ResponseData{data={url=string}}
 // @Failure      401   {object}  httputil.ErrorResponseData
 // @Failure      500   {object}  httputil.ErrorResponseData
 // @Router       /file [post]
@@ -101,7 +102,8 @@ func (h *mediaHandler) handleUpload(c echo.Context, fileType string) error {
 		return c.JSON(http.StatusInternalServerError, httputil.ErrorResponse(err.Error()))
 	}
 
-	err = h.fileService.CreateFile(ctx, orgId, f, header)
+	var key string
+	key, err = h.fileService.CreateFile(ctx, orgId, f, header)
 	if err != nil {
 		if errors.Is(err, file.FileTooLargeError{}) {
 			return c.JSON(http.StatusRequestEntityTooLarge, httputil.ErrorResponse(err.Error()))
@@ -110,5 +112,11 @@ func (h *mediaHandler) handleUpload(c echo.Context, fileType string) error {
 		return c.JSON(http.StatusInternalServerError, httputil.ErrorResponse(err.Error()))
 	}
 
-	return c.JSON(200, httputil.Response("ok"))
+	publicUrl := viper.GetString("public-url")
+
+	return c.JSON(http.StatusOK, httputil.Response(struct {
+		URL string `json:"url"`
+	}{
+		URL: publicUrl + "/" + key,
+	}))
 }

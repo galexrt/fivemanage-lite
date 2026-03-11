@@ -192,6 +192,8 @@ func init() {
 	rootCmd.Flags().String("bucket-domain", "", "Bucket domain for file storage")
 	// otel
 	rootCmd.Flags().Bool("disable-otel", false, "Disable OpenTelemetry")
+	// public url
+	rootCmd.Flags().String("public-url", "", "Public URL for the server, used for generating/returning links")
 	// upload limits in bytes
 	rootCmd.Flags().Int64("upload-max-image-bytes", 10*1024*1024, "Maximum image upload size in bytes")
 	rootCmd.Flags().Int64("upload-max-audio-bytes", 50*1024*1024, "Maximum audio upload size in bytes")
@@ -233,6 +235,9 @@ func init() {
 		bindError(err)
 	}
 	if err := viper.BindEnv("disable-otel", "DISABLE_OTEL"); err != nil {
+		bindError(err)
+	}
+	if err := viper.BindEnv("public-url", "PUBLIC_URL"); err != nil {
 		bindError(err)
 	}
 	if err := viper.BindPFlag("upload-max-image-bytes", rootCmd.Flags().Lookup("upload-max-image-bytes")); err != nil {

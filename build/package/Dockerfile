@@ -37,6 +37,8 @@ RUN go build -ldflags "-X main.Version=${LITE_VERSION}" -o /app/main ./cmd/lite/
 # Application
 FROM gcr.io/distroless/static-debian12
 
+LABEL org.opencontainers.image.source=https://github.com/galexrt/fivemanage-lite
+
 WORKDIR /app
 
 COPY --from=backend /app/main /app/main

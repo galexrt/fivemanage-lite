@@ -2,6 +2,7 @@ package token
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/fivemanage/lite/api"
@@ -47,7 +48,7 @@ func (r *handler) createTokenHandler(c echo.Context) error {
 		Token: apiToken,
 	}
 
-	return cc.JSON(200, httputil.Response(tokenResponse))
+	return cc.JSON(http.StatusOK, httputil.Response(tokenResponse))
 }
 
 // listTokensHandler godoc
@@ -70,7 +71,7 @@ func (r *handler) listTokensHandler(c echo.Context) error {
 		return cc.JSON(500, httputil.ErrorResponse(err.Error()))
 	}
 
-	return cc.JSON(200, httputil.Response(tokens))
+	return cc.JSON(http.StatusOK, httputil.Response(tokens))
 }
 
 // deleteTokenHandler godoc
@@ -94,5 +95,5 @@ func (r *handler) deleteTokenHandler(c echo.Context) error {
 		return cc.JSON(500, httputil.ErrorResponse(err.Error()))
 	}
 
-	return cc.JSON(200, httputil.Response(nil))
+	return cc.JSON(http.StatusOK, httputil.Response(nil))
 }

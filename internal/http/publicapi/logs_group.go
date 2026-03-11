@@ -1,6 +1,8 @@
 package publicapi
 
 import (
+	"net/http"
+
 	"github.com/fivemanage/lite/api"
 	"github.com/fivemanage/lite/internal/auth"
 	"github.com/fivemanage/lite/internal/http/httputil"
@@ -54,5 +56,5 @@ func (h *logsHandler) submitLogs(c echo.Context) error {
 
 	h.logService.SubmitLogs(ctx, orgID, dataset, logs)
 
-	return c.JSON(200, httputil.Response("ok"))
+	return c.JSON(http.StatusOK, httputil.Response("ok"))
 }

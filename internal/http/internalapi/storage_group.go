@@ -55,7 +55,7 @@ func (h *storageHandler) listStorageFiles(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, httputil.ErrorResponse(err.Error()))
 	}
 
-	return c.JSON(200, httputil.Response(assetData))
+	return c.JSON(http.StatusOK, httputil.Response(assetData))
 }
 
 // getStorageFile godoc
@@ -85,7 +85,7 @@ func (h *storageHandler) getStorageFile(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, httputil.ErrorResponse(err.Error()))
 	}
 
-	return c.JSON(200, httputil.Response(assetData))
+	return c.JSON(http.StatusOK, httputil.Response(assetData))
 }
 
 // uploadStorageFile godoc

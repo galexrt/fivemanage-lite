@@ -36,7 +36,7 @@ func Resource() *resource.Resource {
 
 func InstallExportPipeline(ctx context.Context, disabled bool) (func(context.Context) error, error) {
 	if disabled {
-		tracerProvider := trace.NewTracerProvider()
+		tracerProvider := trace.NewTracerProvider(trace.WithSampler(trace.NeverSample()))
 		otel.SetTracerProvider(tracerProvider)
 
 		return tracerProvider.Shutdown, nil

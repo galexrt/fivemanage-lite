@@ -1,6 +1,8 @@
 package organization
 
 import (
+	"net/http"
+
 	"github.com/fivemanage/lite/api"
 	"github.com/fivemanage/lite/internal/http/appctx"
 	"github.com/fivemanage/lite/internal/http/httputil"
@@ -37,7 +39,7 @@ func (r *handler) createOrganizationHandler(c echo.Context) error {
 		return cc.JSON(500, httputil.ErrorResponse(err.Error()))
 	}
 
-	return cc.JSON(200, httputil.Response(organization))
+	return cc.JSON(http.StatusOK, httputil.Response(organization))
 }
 
 // listOrganizationsHandler godoc
@@ -58,7 +60,7 @@ func (r *handler) listOrganizationsHandler(c echo.Context) error {
 		return cc.JSON(500, httputil.ErrorResponse(err.Error()))
 	}
 
-	return cc.JSON(200, httputil.Response(organizations))
+	return cc.JSON(http.StatusOK, httputil.Response(organizations))
 }
 
 // getOrganizationHandler godoc
@@ -82,7 +84,7 @@ func (r *handler) getOrganizationHandler(c echo.Context) error {
 		return cc.JSON(500, httputil.ErrorResponse(err.Error()))
 	}
 
-	return cc.JSON(200, httputil.Response(organization))
+	return cc.JSON(http.StatusOK, httputil.Response(organization))
 }
 
 // getOrganizationStatsHandler godoc
@@ -106,5 +108,5 @@ func (r *handler) getOrganizationStatsHandler(c echo.Context) error {
 		return cc.JSON(500, httputil.ErrorResponse(err.Error()))
 	}
 
-	return cc.JSON(200, httputil.Response(stats))
+	return cc.JSON(http.StatusOK, httputil.Response(stats))
 }

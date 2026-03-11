@@ -37,31 +37,31 @@ func (s *Service) CreateFile(
 	organizationID string,
 	file multipart.File,
 	fileHeader *multipart.FileHeader,
-) error {
+) (string, error) {
 	var err error
 	var key string
 
 	primaryKey, err := crypt.GeneratePrimaryKey()
 	if err != nil {
-		return UploadStorageError{
+		return "", UploadStorageError{
 			ErrorMsg: err.Error(),
 		}
 	}
 
 	mimeType, ext, fileType, err := httputil.GetMimeDetails(fileHeader, file)
 	if err != nil {
-		return UploadStorageError{
+		return "", UploadStorageError{
 			ErrorMsg: errors.New("failed to get mime type").Error(),
 		}
 	}
 
 	if err := validateUploadSize(fileType, fileHeader.Size, s.uploadLimits); err != nil {
-		return err
+		return "", err
 	}
 
 	key, err = generateFileKey(organizationID, ext)
 	if err != nil {
-		return UploadStorageError{
+		return "", UploadStorageError{
 			ErrorMsg: errors.New("failed to generate file key").Error(),
 		}
 	}
@@ -74,7 +74,7 @@ func (s *Service) CreateFile(
 		Key:            key,
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// you'd think we didn't need to do this, but the since we read the file before this step to get mime type and shit
@@ -84,10 +84,10 @@ func (s *Service) CreateFile(
 		logrus.WithError(err).WithField("organization_id", organizationID).Error("FileService.CreateStorageFile")
 		if err := tx.Rollback(); err != nil {
 			logrus.WithError(err).WithField("organization_id", organizationID).Error("FileService.CreateStorageFile")
-			return err
+			return "", err
 		}
 
-		return UploadStorageError{
+		return "", UploadStorageError{
 			ErrorMsg: err.Error(),
 		}
 	}
@@ -95,19 +95,19 @@ func (s *Service) CreateFile(
 	err = s.storage.UploadFile(ctx, buffer, key, mimeType)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
-			return err
+			return "", err
 		}
 
-		return err
+		return "", err
 	}
 
 	// this is a bit tricky, but if this fails....then...oh well
 	err = tx.Commit()
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return key, nil
 }
 
 // uhhh, this is used in the dashboard, not the public api

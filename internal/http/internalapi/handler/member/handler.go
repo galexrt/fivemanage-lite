@@ -1,6 +1,8 @@
 package member
 
 import (
+	"net/http"
+
 	"github.com/fivemanage/lite/internal/http/appctx"
 	"github.com/fivemanage/lite/internal/http/httputil"
 	"github.com/labstack/echo/v4"
@@ -28,5 +30,5 @@ func (r *handler) listMembersHandler(c echo.Context) error {
 		return cc.JSON(500, httputil.ErrorResponse(err.Error()))
 	}
 
-	return cc.JSON(200, httputil.Response(members))
+	return cc.JSON(http.StatusOK, httputil.Response(members))
 }
