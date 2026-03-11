@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -17,10 +18,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+var organizationIDPathPattern = regexp.MustCompile(`^[A-Za-z0-9]{16}$`)
+
 // DRY they said
 func registerMediaApi(group *echo.Group, fileService *file.Service, tokenService *token.Service, cache *cache.Cache) {
 	h := &mediaHandler{fileService: fileService}
-	group.GET("/file/:organizationId/:fileName", h.proxyFile)
 	group.POST("/image", h.uploadImage, middleware.TokenAuth(tokenService, cache), middleware.ValidateMime("image", middleware.WhitelistedImageMIME))
 	group.POST("/video", h.uploadVideo, middleware.TokenAuth(tokenService, cache), middleware.ValidateMime("video", middleware.WhitelistedVideoMIME))
 	group.POST("/audio", h.uploadAudio, middleware.TokenAuth(tokenService, cache), middleware.ValidateMime("audio", middleware.WhitelistedAudioMIME))
@@ -30,6 +32,27 @@ func registerMediaApi(group *echo.Group, fileService *file.Service, tokenService
 func ProxyFileHandler(fileService *file.Service) echo.HandlerFunc {
 	h := &mediaHandler{fileService: fileService}
 	return h.proxyFile
+}
+
+func IsProxyFilePath(path string) bool {
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	if len(parts) != 2 {
+		return false
+	}
+
+	return isProxyFileParams(parts[0], parts[1])
+}
+
+func isProxyFileParams(organizationID, fileName string) bool {
+	if !organizationIDPathPattern.MatchString(organizationID) {
+		return false
+	}
+
+	if strings.Contains(fileName, "/") || !strings.Contains(fileName, ".") {
+		return false
+	}
+
+	return true
 }
 
 type mediaHandler struct {
@@ -126,7 +149,7 @@ func (h *mediaHandler) handleUpload(c echo.Context, fileType string) error {
 	return c.JSON(http.StatusOK, httputil.Response(struct {
 		URL string `json:"url"`
 	}{
-		URL: publicUrl + "/file/" + key,
+		URL: publicUrl + "/" + key,
 	}))
 }
 
@@ -135,6 +158,9 @@ func (h *mediaHandler) proxyFile(c echo.Context) error {
 
 	organizationID := c.Param("organizationId")
 	fileName := c.Param("fileName")
+	if !isProxyFileParams(organizationID, fileName) {
+		return echo.NewHTTPError(http.StatusNotFound, httputil.ErrorResponse("Not found"))
+	}
 
 	body, contentType, contentLength, err := h.fileService.ProxyFile(ctx, organizationID, fileName)
 	if err != nil {

@@ -70,11 +70,15 @@ func NewServer(
 		HTML5:      true,
 		Skipper: func(c echo.Context) bool {
 			path := c.Request().URL.Path
-			return strings.HasPrefix(path, "/api") || strings.HasPrefix(path, "/file/")
+			if strings.HasPrefix(path, "/api") {
+				return true
+			}
+
+			return publicapi.IsProxyFilePath(path)
 		},
 	}))
 
-	app.GET("/file/:organizationId/:fileName", publicapi.ProxyFileHandler(fileService))
+	app.GET("/:organizationId/:fileName", publicapi.ProxyFileHandler(fileService))
 
 	apiGroup := app.Group("/api")
 	dashApi := apiGroup.Group("/dash")
